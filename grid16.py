@@ -1,12 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, colorchooser, filedialog, messagebox
 import json
+from PIL import Image, ImageDraw
 
 class PixelArtEditor:
     def __init__(self, root):
         self.root = root
         self.root.title("Pixel Art Editor")
-        self.root.geometry("800x600")
+        self.root.geometry("1000x600")
         
         # Grid settings
         self.grid_width = 16
@@ -62,8 +63,12 @@ class PixelArtEditor:
         
         ttk.Button(tools_frame, text="Clear All", 
                   command=self.clear_grid).pack(side=tk.LEFT, padx=5)
-        ttk.Button(tools_frame, text="Save", 
+        ttk.Button(tools_frame, text="Save JSON", 
                   command=self.save_art).pack(side=tk.LEFT, padx=5)
+        ttk.Button(tools_frame, text="Save PNG", 
+                  command=self.export_png).pack(side=tk.LEFT, padx=5)
+        ttk.Button(tools_frame, text="Save JPEG", 
+                  command=self.export_jpeg).pack(side=tk.LEFT, padx=5)
         ttk.Button(tools_frame, text="Load", 
                   command=self.load_art).pack(side=tk.LEFT, padx=5)
         
@@ -210,6 +215,84 @@ class PixelArtEditor:
         except ValueError:
             messagebox.showerror("Invalid Size", "Please enter size in format WIDTHxHEIGHT")
     
+    def create_image(self, scale_factor=1):
+        """Create a PIL Image from the grid data"""
+        # Calculate image size
+        img_width = self.grid_width * scale_factor
+        img_height = self.grid_height * scale_factor
+        
+        # Create image with white background
+        image = Image.new('RGB', (img_width, img_height), 'white')
+        draw = ImageDraw.Draw(image)
+        
+        # Draw each pixel
+        for (grid_x, grid_y), color in self.grid_data.items():
+            # Calculate pixel position in the image
+            x1 = grid_x * scale_factor
+            y1 = grid_y * scale_factor
+            x2 = x1 + scale_factor
+            y2 = y1 + scale_factor
+            
+            # Draw the pixel (rectangle)
+            draw.rectangle([x1, y1, x2-1, y2-1], fill=color)
+        
+        return image
+    
+    def export_png(self):
+        """Export the pixel art as PNG"""
+        if not self.grid_data:
+            messagebox.showwarning("Nothing to Export", "The canvas is empty!")
+            return
+        
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png"), ("All files", "*.*")]
+        )
+        
+        if filename:
+            try:
+                # Ask for scale factor
+                scale_dialog = ScaleDialog(self.root)
+                self.root.wait_window(scale_dialog.dialog)
+                scale_factor = scale_dialog.result
+                
+                if scale_factor:
+                    image = self.create_image(scale_factor)
+                    image.save(filename, 'PNG')
+                    messagebox.showinfo("Success", f"PNG exported successfully!\nSize: {image.width}x{image.height}")
+                    
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not export PNG: {str(e)}")
+    
+    def export_jpeg(self):
+        """Export the pixel art as JPEG"""
+        if not self.grid_data:
+            messagebox.showwarning("Nothing to Export", "The canvas is empty!")
+            return
+        
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".jpg",
+            filetypes=[("JPEG files", "*.jpg"), ("JPEG files", "*.jpeg"), ("All files", "*.*")]
+        )
+        
+        if filename:
+            try:
+                # Ask for scale factor
+                scale_dialog = ScaleDialog(self.root)
+                self.root.wait_window(scale_dialog.dialog)
+                scale_factor = scale_dialog.result
+                
+                if scale_factor:
+                    image = self.create_image(scale_factor)
+                    # Convert to RGB (JPEG doesn't support transparency)
+                    if image.mode != 'RGB':
+                        image = image.convert('RGB')
+                    image.save(filename, 'JPEG', quality=95)
+                    messagebox.showinfo("Success", f"JPEG exported successfully!\nSize: {image.width}x{image.height}")
+                    
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not export JPEG: {str(e)}")
+    
     def save_art(self):
         """Save the pixel art to a JSON file"""
         if not self.grid_data:
@@ -266,6 +349,53 @@ class PixelArtEditor:
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Could not load file: {str(e)}")
+
+class ScaleDialog:
+    """Dialog to ask user for export scale factor"""
+    def __init__(self, parent):
+        self.result = None
+        
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Export Scale")
+        self.dialog.geometry("300x150")
+        self.dialog.resizable(False, False)
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+        
+        # Center the dialog
+        self.dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 50, parent.winfo_rooty() + 50))
+        
+        # Content
+        ttk.Label(self.dialog, text="Choose export scale:").pack(pady=10)
+        ttk.Label(self.dialog, text="(Higher scale = larger image)").pack(pady=(0, 10))
+        
+        self.scale_var = tk.IntVar(value=10)
+        
+        scale_frame = ttk.Frame(self.dialog)
+        scale_frame.pack(pady=10)
+        
+        for scale in [1, 5, 10, 20, 50]:
+            ttk.Radiobutton(scale_frame, text=f"{scale}x", variable=self.scale_var, 
+                           value=scale).pack(side=tk.LEFT, padx=5)
+        
+        # Buttons
+        button_frame = ttk.Frame(self.dialog)
+        button_frame.pack(pady=20)
+        
+        ttk.Button(button_frame, text="OK", command=self.ok_clicked).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.cancel_clicked).pack(side=tk.LEFT, padx=5)
+        
+        # Bind Enter and Escape keys
+        self.dialog.bind('<Return>', lambda e: self.ok_clicked())
+        self.dialog.bind('<Escape>', lambda e: self.cancel_clicked())
+        
+    def ok_clicked(self):
+        self.result = self.scale_var.get()
+        self.dialog.destroy()
+        
+    def cancel_clicked(self):
+        self.result = None
+        self.dialog.destroy()
 
 def main():
     root = tk.Tk()
