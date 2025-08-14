@@ -7,35 +7,27 @@ class PixelArtEditor:
     def __init__(self, root):
         self.root = root
         self.root.title("Pixel Art Editor")
-        self.root.geometry("1000x600")
-        
+        self.root.geometry("1000x600")        
         # Grid settings
         self.grid_width = 32
         self.grid_height = 32
-        self.pixel_size = 16
-        
+        self.pixel_size = 16        
         # Current color
-        self.current_color = "#000000"
-        
+        self.current_color = "#000000"        
         # Grid data - stores color for each pixel
-        self.grid_data = {}
-        
+        self.grid_data = {}     
         # Drawing mode
         self.is_drawing = False
         self.is_erasing = False  # Added flag to track erasing state
-
         self.setup_ui()
-        self.create_grid()
-        
+        self.create_grid()       
     def setup_ui(self):
         # Main frame
         main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)        
         # Control panel
         control_frame = ttk.Frame(main_frame)
-        control_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 10))
-        
+        control_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 10))        
         # Color selection
         color_frame = ttk.Frame(control_frame)
         color_frame.pack(side=tk.LEFT)
@@ -47,8 +39,7 @@ class PixelArtEditor:
         self.color_display.pack(side=tk.LEFT, padx=(0, 10))
         
         ttk.Button(color_frame, text="Choose Color", 
-                  command=self.choose_color).pack(side=tk.LEFT, padx=(0, 20))
-        
+                  command=self.choose_color).pack(side=tk.LEFT, padx=(0, 20))        
         # Quick colors
         quick_colors = ["#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF", 
                        "#FFFF00", "#FF00FF", "#00FFFF", "#FFA500", "#800080"]
@@ -56,8 +47,7 @@ class PixelArtEditor:
         for color in quick_colors:
             color_btn = tk.Button(color_frame, width=2, height=1, bg=color,
                                 command=lambda c=color: self.set_color(c))
-            color_btn.pack(side=tk.LEFT, padx=1)
-        
+            color_btn.pack(side=tk.LEFT, padx=1)       
         # Tools
         tools_frame = ttk.Frame(control_frame)
         tools_frame.pack(side=tk.RIGHT)
@@ -71,8 +61,7 @@ class PixelArtEditor:
         ttk.Button(tools_frame, text="Save JPEG", 
                   command=self.export_jpeg).pack(side=tk.LEFT, padx=5)
         ttk.Button(tools_frame, text="Load", 
-                  command=self.load_art).pack(side=tk.LEFT, padx=5)
-        
+                  command=self.load_art).pack(side=tk.LEFT, padx=5)     
         # Grid size controls
         size_frame = ttk.Frame(control_frame)
         size_frame.pack(side=tk.RIGHT, padx=(20, 0))
@@ -83,47 +72,38 @@ class PixelArtEditor:
         size_combo = ttk.Combobox(size_frame, textvariable=size_var, width=8,
                                  values=["16x16", "32x32", "64x64", "128x128"])
         size_combo.pack(side=tk.LEFT, padx=5)
-        size_combo.bind("<<ComboboxSelected>>", self.change_grid_size)
-        
+        size_combo.bind("<<ComboboxSelected>>", self.change_grid_size)       
         # Canvas frame
         canvas_frame = ttk.Frame(main_frame)
-        canvas_frame.pack(fill=tk.BOTH, expand=True)
-        
+        canvas_frame.pack(fill=tk.BOTH, expand=True)        
         # Scrollable canvas
-        self.canvas = tk.Canvas(canvas_frame, bg="white", scrollregion=(0, 0, 1000, 1000))
-        
+        self.canvas = tk.Canvas(canvas_frame, bg="white", scrollregion=(0, 0, 1000, 1000))    
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self.canvas.yview)
         h_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
         
-        self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
+        self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)      
         # Pack scrollbars and canvas
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)       
         # Bind mouse events
         self.canvas.bind("<Button-1>", self.start_drawing)
         self.canvas.bind("<B1-Motion>", self.draw_pixel)
-        self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
-        
+        self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)        
         # Modified right-click events for hold-to-erase
         self.canvas.bind("<Button-3>", self.start_erasing)        # Right mouse down
         self.canvas.bind("<B3-Motion>", self.erase_pixel_motion)  # Right mouse drag
-        self.canvas.bind("<ButtonRelease-3>", self.stop_erasing)  # Right mouse up
-        
+        self.canvas.bind("<ButtonRelease-3>", self.stop_erasing)  # Right mouse up        
     def create_grid(self):
         """Create the pixel grid"""
         self.canvas.delete("all")
         self.grid_data = {}
         
         canvas_width = self.grid_width * self.pixel_size
-        canvas_height = self.grid_height * self.pixel_size
-        
+        canvas_height = self.grid_height * self.pixel_size     
         # Update scroll region
-        self.canvas.configure(scrollregion=(0, 0, canvas_width + 50, canvas_height + 50))
-        
+        self.canvas.configure(scrollregion=(0, 0, canvas_width + 50, canvas_height + 50))        
         # Create grid lines
         for i in range(self.grid_width + 1):
             x = i * self.pixel_size
@@ -131,8 +111,7 @@ class PixelArtEditor:
             
         for i in range(self.grid_height + 1):
             y = i * self.pixel_size
-            self.canvas.create_line(0, y, canvas_width, y, fill="lightgray", tags="grid")
-    
+            self.canvas.create_line(0, y, canvas_width, y, fill="lightgray", tags="grid")    
     def get_grid_position(self, x, y):
         """Convert canvas coordinates to grid coordinates"""
         canvas_x = self.canvas.canvasx(x)
@@ -143,8 +122,7 @@ class PixelArtEditor:
         
         if 0 <= grid_x < self.grid_width and 0 <= grid_y < self.grid_height:
             return grid_x, grid_y
-        return None, None
-    
+        return None, None    
     def draw_pixel_at(self, grid_x, grid_y, color=None):
         """Draw a pixel at the given grid coordinates"""
         if color is None:
@@ -153,67 +131,55 @@ class PixelArtEditor:
         x1 = grid_x * self.pixel_size
         y1 = grid_y * self.pixel_size
         x2 = x1 + self.pixel_size
-        y2 = y1 + self.pixel_size
-        
+        y2 = y1 + self.pixel_size        
         # Remove existing pixel
         pixel_tag = f"pixel_{grid_x}_{grid_y}"
-        self.canvas.delete(pixel_tag)
-        
+        self.canvas.delete(pixel_tag)        
         # Draw new pixel
         if color != "white":  # Don't draw white pixels (transparent)
             self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, 
                                        outline=color, tags=pixel_tag)
             self.grid_data[(grid_x, grid_y)] = color
         elif (grid_x, grid_y) in self.grid_data:
-            del self.grid_data[(grid_x, grid_y)]
-    
+            del self.grid_data[(grid_x, grid_y)]   
     def start_drawing(self, event):
         """Start drawing mode"""
         self.is_drawing = True
-        self.draw_pixel(event)
-    
+        self.draw_pixel(event)    
     def draw_pixel(self, event):
         """Draw pixel at mouse position"""
         if self.is_drawing:
             grid_x, grid_y = self.get_grid_position(event.x, event.y)
             if grid_x is not None:
-                self.draw_pixel_at(grid_x, grid_y)
-    
+                self.draw_pixel_at(grid_x, grid_y)    
     def stop_drawing(self, event):
         """Stop drawing mode"""
-        self.is_drawing = False
-    
+        self.is_drawing = False    
     def start_erasing(self, event):
         """Start erasing mode with right-click"""
         self.is_erasing = True
         self.erase_pixel_at_position(event)
-
     def erase_pixel_motion(self, event):
         """Erase pixel while dragging with right mouse button"""
         if self.is_erasing:
             self.erase_pixel_at_position(event)
-
     def erase_pixel_at_position(self, event):
         """Erase pixel at the given event position"""
         grid_x, grid_y = self.get_grid_position(event.x, event.y)
         if grid_x is not None:
             self.draw_pixel_at(grid_x, grid_y, "white")
-
     def stop_erasing(self, event):
         """Stop erasing mode"""
         self.is_erasing = False
-
     def choose_color(self):
         """Open color chooser dialog"""
         color = colorchooser.askcolor(color=self.current_color)[1]
         if color:
-            self.set_color(color)
-    
+            self.set_color(color)    
     def set_color(self, color):
         """Set the current drawing color"""
         self.current_color = color
-        self.color_display.config(bg=color)
-    
+        self.color_display.config(bg=color)  
     def clear_grid(self):
         """Clear all pixels"""
         if messagebox.askyesno("Clear Grid", "Are you sure you want to clear all pixels?"):
@@ -222,7 +188,6 @@ class PixelArtEditor:
             # Recreate grid to ensure it's on top
             for item in self.canvas.find_withtag("grid"):
                 self.canvas.tag_raise(item)
-    
     def change_grid_size(self, event=None):
         """Change the grid size"""
         size_str = event.widget.get()
@@ -232,31 +197,26 @@ class PixelArtEditor:
             self.grid_height = height
             self.create_grid()
         except ValueError:
-            messagebox.showerror("Invalid Size", "Please enter size in format WIDTHxHEIGHT")
-    
+            messagebox.showerror("Invalid Size", "Please enter size in format WIDTHxHEIGHT")  
     def create_image(self, scale_factor=1):
         """Create a PIL Image from the grid data"""
         # Calculate image size
         img_width = self.grid_width * scale_factor
-        img_height = self.grid_height * scale_factor
-        
+        img_height = self.grid_height * scale_factor        
         # Create image with white background
         image = Image.new('RGB', (img_width, img_height), 'white')
-        draw = ImageDraw.Draw(image)
-        
+        draw = ImageDraw.Draw(image)      
         # Draw each pixel
         for (grid_x, grid_y), color in self.grid_data.items():
             # Calculate pixel position in the image
             x1 = grid_x * scale_factor
             y1 = grid_y * scale_factor
             x2 = x1 + scale_factor
-            y2 = y1 + scale_factor
-            
+            y2 = y1 + scale_factor         
             # Draw the pixel (rectangle)
             draw.rectangle([x1, y1, x2-1, y2-1], fill=color)
         
-        return image
-    
+        return image   
     def export_png(self):
         """Export the pixel art as PNG"""
         if not self.grid_data:
@@ -266,8 +226,7 @@ class PixelArtEditor:
         filename = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[("PNG files", "*.png"), ("All files", "*.*")]
-        )
-        
+        )        
         if filename:
             try:
                 # Ask for scale factor
@@ -281,8 +240,7 @@ class PixelArtEditor:
                     messagebox.showinfo("Success", f"PNG exported successfully!\nSize: {image.width}x{image.height}")
                     
             except Exception as e:
-                messagebox.showerror("Error", f"Could not export PNG: {str(e)}")
-    
+                messagebox.showerror("Error", f"Could not export PNG: {str(e)}")    
     def export_jpeg(self):
         """Export the pixel art as JPEG"""
         if not self.grid_data:
@@ -310,8 +268,7 @@ class PixelArtEditor:
                     messagebox.showinfo("Success", f"JPEG exported successfully!\nSize: {image.width}x{image.height}")
                     
             except Exception as e:
-                messagebox.showerror("Error", f"Could not export JPEG: {str(e)}")
-    
+                messagebox.showerror("Error", f"Could not export JPEG: {str(e)}")   
     def save_art(self):
         """Save the pixel art to a JSON file"""
         if not self.grid_data:
@@ -337,8 +294,7 @@ class PixelArtEditor:
                     
                 messagebox.showinfo("Success", "Pixel art saved successfully!")
             except Exception as e:
-                messagebox.showerror("Error", f"Could not save file: {str(e)}")
-    
+                messagebox.showerror("Error", f"Could not save file: {str(e)}")  
     def load_art(self):
         """Load pixel art from a JSON file"""
         filename = filedialog.askopenfilename(
@@ -353,11 +309,9 @@ class PixelArtEditor:
                 # Update grid settings
                 self.grid_width = save_data.get('grid_width', 32)
                 self.grid_height = save_data.get('grid_height', 32)
-                self.pixel_size = save_data.get('pixel_size', 12)
-                
+                self.pixel_size = save_data.get('pixel_size', 12)               
                 # Recreate grid
-                self.create_grid()
-                
+                self.create_grid()              
                 # Load pixels
                 pixels = save_data.get('pixels', {})
                 for pos_str, color in pixels.items():
@@ -368,7 +322,6 @@ class PixelArtEditor:
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Could not load file: {str(e)}")
-
 class ScaleDialog:
     """Dialog to ask user for export scale factor"""
     def __init__(self, parent):
@@ -423,4 +376,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
