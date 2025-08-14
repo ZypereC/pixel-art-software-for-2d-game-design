@@ -7,7 +7,7 @@ class PixelArtEditor:
     def __init__(self, root):
         self.root = root
         self.root.title("Pixel Art Editor")
-        self.root.geometry("1000x600")
+        self.root.geometry("1100x1000")
         
         # Grid settings
         self.grid_width = 64
@@ -22,7 +22,8 @@ class PixelArtEditor:
         
         # Drawing mode
         self.is_drawing = False
-        
+        self.is_erasing = False  # Added flag to track erasing state
+
         self.setup_ui()
         self.create_grid()
         
@@ -106,7 +107,11 @@ class PixelArtEditor:
         self.canvas.bind("<Button-1>", self.start_drawing)
         self.canvas.bind("<B1-Motion>", self.draw_pixel)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
-        self.canvas.bind("<Button-3>", self.erase_pixel)  # Right click to erase
+        
+        # Modified right-click events for hold-to-erase
+        self.canvas.bind("<Button-3>", self.start_erasing)        # Right mouse down
+        self.canvas.bind("<B3-Motion>", self.erase_pixel_motion)  # Right mouse drag
+        self.canvas.bind("<ButtonRelease-3>", self.stop_erasing)  # Right mouse up
         
     def create_grid(self):
         """Create the pixel grid"""
@@ -178,12 +183,26 @@ class PixelArtEditor:
         """Stop drawing mode"""
         self.is_drawing = False
     
-    def erase_pixel(self, event):
-        """Erase pixel (right click)"""
+    def start_erasing(self, event):
+        """Start erasing mode with right-click"""
+        self.is_erasing = True
+        self.erase_pixel_at_position(event)
+
+    def erase_pixel_motion(self, event):
+        """Erase pixel while dragging with right mouse button"""
+        if self.is_erasing:
+            self.erase_pixel_at_position(event)
+
+    def erase_pixel_at_position(self, event):
+        """Erase pixel at the given event position"""
         grid_x, grid_y = self.get_grid_position(event.x, event.y)
         if grid_x is not None:
             self.draw_pixel_at(grid_x, grid_y, "white")
-    
+
+    def stop_erasing(self, event):
+        """Stop erasing mode"""
+        self.is_erasing = False
+
     def choose_color(self):
         """Open color chooser dialog"""
         color = colorchooser.askcolor(color=self.current_color)[1]
@@ -357,7 +376,7 @@ class ScaleDialog:
         
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Export Scale")
-        self.dialog.geometry("300x150")
+        self.dialog.geometry("300x250")
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
         self.dialog.grab_set()
